@@ -1,0 +1,70 @@
+{
+	"version": 8,
+	"name": "Style test ITowns",
+	"glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+  	"sources": {
+		"Enseignement": {
+			"type": "vector",
+			"url": "https://vectortiles.ign.fr/rok4server/1.0.0/Enseignement/metadata.json"
+            
+		},
+		"PARCELLES": {
+			"type": "vector",
+			"url": "https://vectortiles.ign.fr/rok4server/1.0.0/PARCELLES/metadata.json"
+           
+		},
+		"BATI_94": {
+			"type": "vector",
+			"url": "https://vectortiles.ign.fr/rok4server/1.0.0/BATI_D94/metadata.json"
+          
+		}
+	},
+	"transition": {
+		"duration": 300,
+		"delay": 0
+	},
+	"layers": [
+        {
+			"id": "style test parcelles",
+			"type": "fill",
+			"source": "PARCELLES",
+			"source-layer": "PARCELLES",
+			"minzoom": 0,
+			"layout": {
+				"visibility": "visible"
+			},
+			"paint": {
+				"fill-color": "#D6E5BA",
+		        "fill-opacity": 1
+			}
+		},
+		{
+			"id": "style test bati_94",
+			"type": "fill",
+			"source": "BATI_94",
+			"source-layer": "BATI_D94",
+			"minzoom": 0,
+			"layout": {
+				"visibility": "visible"
+			},
+			"paint": {
+				"fill-color": "#808080",
+		        "fill-opacity": 1
+			}
+		},
+		{
+			"id": "style test enseignement",
+			"type": "circle",
+			"source": "Enseignement",
+			"source-layer": "Enseignement",
+			"minzoom": 0,
+			"layout": {
+				"visibility": "visible"
+			},
+            "paint": {
+                "circle-radius" : 3,
+                "circle-color" : "#FF0000"
+			}
+		}
+	]
+}

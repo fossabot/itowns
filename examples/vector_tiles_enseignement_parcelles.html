@@ -1,0 +1,178 @@
+<html>
+    <head>
+        <title>Itowns - Globe + vector-tiles</title>
+
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="css/example.css">
+        <link rel="stylesheet" type="text/css" href="css/loading_screen.css">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="js/GUI/dat.gui/dat.gui.min.js"></script>
+    </head>
+    <body>
+        <div id="viewerDiv"></div>
+        <div id="debug" width="400" height="300"></div>
+        <script src="js/GUI/GuiTools.js"></script>
+        <script src="../dist/itowns.js"></script>
+        <script src="js/loading_screen.js"></script>
+        <script src="../dist/debug.js"></script>
+        <script>
+            // # Simple Globe viewer + a vector tile layer
+
+            // Define initial camera position
+            var positionOnGlobe = { longitude: 2.55, latitude: 48.7, altitude: 7000 };
+            var promises = [];
+
+            // `viewerDiv` will contain iTowns' rendering area (`<canvas>`)
+            var viewerDiv = document.getElementById('viewerDiv');
+
+            // Instanciate iTowns GlobeView*
+            var view = new itowns.GlobeView(viewerDiv, positionOnGlobe);
+
+            // define pole texture
+            view.tileLayer.noTextureColor = new itowns.THREE.Color(0x95c1e1);
+            var menuGlobe = new GuiTools('menuDiv', view, 300);
+
+            promises.push(itowns.Fetcher.json('./layers/JSONLayers/OPENSM.json').then(function _(config) {
+                config.source = new itowns.TMSSource(config.source);
+                var layer = new itowns.ColorLayer('opensm', config);
+                return view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+            }));
+
+            // // Add two elevation layers.
+            // // These will deform iTowns globe geometry to represent terrain elevation.
+            // function addElevationLayerFromConfig(config) {
+            //     config.source = new itowns.WMTSSource(config.source);
+            //     var layer = new itowns.ElevationLayer(config.id, config);
+            //     view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+            // }
+            // itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
+            // itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
+
+            // ERROR ON style file.json rename BATI_94 to BATI_D94
+            // const sources = ['Enseignement', 'PARCELLES', 'BATI_D94'];
+            const sources = ['Enseignement', 'PARCELLES'];
+            // const sources = ['BATI_D94'];
+
+
+            for (const source of sources) {
+                promises.push(itowns.Fetcher.json('style_itowns.json').then(function (style) {
+                    var urlTiles = style.sources[source].tiles[0];
+                    if (source === 'BATI_D94') {
+                        urlTiles = 'https://vectortiles.ign.fr/rok4server/1.0.0/BATI_D94/{z}/{x}/{y}.pbf';
+                    }
+                    urlTiles = urlTiles.replace(/\{/g, '${');
+                    var supportedLayers = [];
+                    var backgroundLayer;
+
+                    style.layers.forEach(function(layer) {
+                        if (layer.type === 'background') {
+                            backgroundLayer = layer;
+                        } else if (layer.source === source) {
+                            supportedLayers.push(layer);
+                        }
+                    });
+
+                    function inter(z) {
+                        return z - (z % 5);
+                    }
+
+                    function isValidData(data, extentDestination) {
+                        const isValid = inter(extentDestination.zoom) == inter(data.extent.zoom);
+                        return false;
+                    }
+                
+                    var mvtLayer;
+                    if (source == 'BATI_D94') {
+                        var mvtSource = new itowns.TMSSource({
+                            url: urlTiles,
+                            format: 'application/x-protobuf;type=mapbox-vector',
+                            attribution: {
+                                name: 'OpenStreetMap',
+                                url: 'http://www.openstreetmap.org/',
+                            },
+                            zoom: {
+                                min: 15,
+                                max: 15,
+                            },
+                            projection: 'EPSG:3857',
+                            isInverted: true,
+                        });
+
+                        // function altitudeBuildings(properties) {
+                        //     return properties.altitude_minimale_sol;
+                        // }
+
+                        function altitudeBuildings(properties) {
+                            return 0;
+                        }
+                        
+                        function extrudeBuildings(properties) {
+                            return (properties.altitude_minimale_toit - properties.altitude_minimale_sol);
+                        }
+
+                        var color = new itowns.THREE.Color(0xcccccc);
+
+                        var buildingLayer = new itowns.GeometryLayer(source, new itowns.THREE.Group(), {
+                            update: itowns.FeatureProcessing.update,
+                            convert: itowns.Feature2Mesh.convert({
+                                color: () => color,
+                                altitude: altitudeBuildings,
+                                extrude: extrudeBuildings
+                            }),
+                            filter: () => true,
+                            overrideAltitudeInToZero: true,
+                            filter: supportedLayers,
+                            source: mvtSource,
+                            backgroundLayer,
+                        });
+                        view.addLayer(buildingLayer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+                        
+                    } else {
+                        var mvtSource = new itowns.TMSSource({
+                            url: urlTiles,
+                            format: 'application/x-protobuf;type=mapbox-vector',
+                            attribution: {
+                                name: 'OpenStreetMap',
+                                url: 'http://www.openstreetmap.org/',
+                            },
+                            networkOptions: {
+                                crossOrigin: "anonymous"
+                            },
+                            zoom: {
+                                min: 10,
+                                max: 20,
+                            },
+                            tileMatrixSet: 'PM',
+                            projection: 'EPSG:3857',
+                            isInverted: true,
+                        });
+                        var mvtLayer = new itowns.ColorLayer(source, {
+                            projection: 'EPSG:3857',
+                            isValidData: isValidData,
+                            source: mvtSource,
+                            filter: supportedLayers,
+                            backgroundLayer,
+                            noTextureParentOutsideLimit: true,
+                        });
+        
+                        return view.addLayer(mvtLayer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+                    }
+                }));
+            }
+
+            // Listen for globe full initialisation event
+            view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
+                Promise.all(promises).then(function () {
+                    itowns.ColorLayersOrdering.moveLayerToIndex(view, 'opensm', 0);
+                }).catch(console.error);
+            });
+
+            view.controls.setTilt(45, false);
+
+
+            const d = new debug.Debug(view, menuGlobe.gui);
+            debug.createTileDebugUI(menuGlobe.gui, view, view.tileLayer, d);
+        </script>
+    </body>
+</html>
