@@ -6,5 +6,6 @@ module.exports = {
         './loaders/DRACOLoader.js',
         './loaders/DDSLoader.js',
         './WebGL.js',
+        './renderers/CSS2DRenderer.js',
     ],
 };

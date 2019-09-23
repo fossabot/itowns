@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import Capabilities from 'Core/System/Capabilities';
 import { unpack1K } from 'Renderer/LayeredMaterial';
 import { WEBGL } from 'ThreeExtended/WebGL';
+import CSS2DRenderer from 'ThreeExtended/renderers/CSS2DRenderer';
 
 const depthRGBA = new THREE.Vector4();
 class c3DEngine {
@@ -25,10 +26,10 @@ class c3DEngine {
         }
 
         const renderer = rendererOrDiv.domElement ? rendererOrDiv : undefined;
-        const viewerDiv = renderer ? undefined : rendererOrDiv;
+        const viewerDiv = renderer ? renderer.domElement : rendererOrDiv;
 
-        this.width = (renderer ? renderer.domElement : viewerDiv).clientWidth;
-        this.height = (renderer ? renderer.domElement : viewerDiv).clientHeight;
+        this.width = viewerDiv.clientWidth;
+        this.height = viewerDiv.clientHeight;
 
         this.positionBuffer = null;
         this._nextThreejsLayer = 1;
@@ -43,6 +44,7 @@ class c3DEngine {
         this.renderView = function _(view) {
             this.renderer.clear();
             this.renderer.render(view.scene, view.camera.camera3D);
+            this.css2DRenderer.render(view.scene, view.camera.camera3D);
         }.bind(this);
 
         this.onWindowResize = function _(w, h) {
@@ -50,16 +52,26 @@ class c3DEngine {
             this.height = h;
             this.fullSizeRenderTarget.setSize(this.width, this.height);
             this.renderer.setSize(this.width, this.height);
+            this.css2DRenderer.setSize(this.width, this.height);
         }.bind(this);
 
         // Create renderer
         try {
+            this.css2DRenderer = new CSS2DRenderer();
+            this.css2DRenderer.setSize(window.innerWidth, window.innerHeight);
+            this.css2DRenderer.domElement.style.position = 'absolute';
+            this.css2DRenderer.domElement.style.top = 0;
+            viewerDiv.appendChild(this.css2DRenderer.domElement);
+
             this.renderer = renderer || new THREE.WebGLRenderer({
                 canvas: document.createElement('canvas'),
                 antialias: options.antialias,
                 alpha: options.alpha,
                 logarithmicDepthBuffer: options.logarithmicDepthBuffer,
             });
+            this.renderer.domElement.style.position = 'absolute';
+            this.renderer.domElement.style.zIndex = 0;
+            this.renderer.domElement.style.top = 0;
         } catch (ex) {
             console.error('Failed to create WebGLRenderer', ex);
             this.renderer = null;

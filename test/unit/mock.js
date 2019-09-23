@@ -22,6 +22,8 @@ class Renderer {
             focus: () => {},
             clientWidth: 400,
             clientHeight: 300,
+            appendChild: () => {},
+            style: {},
         };
         this.context = {
             getParameter: () => 16,
@@ -61,6 +63,7 @@ class Renderer {
                         height: 300,
                     },
                 }),
+                style: {},
             }),
             createElementNS: () => ({
                 createSVGMatrix: () => { },
