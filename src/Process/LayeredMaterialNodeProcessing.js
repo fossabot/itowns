@@ -135,8 +135,8 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
             // Retry extentInsideLimit because you must check with the targetLevel
             // if the first test extentInsideLimit returns that it is out of limits
             // and the node inherits from its parent, then it'll still make a command to fetch texture.
-            node.layerUpdateState[layer.id].noMoreUpdatePossible();
-            return;
+            // node.layerUpdateState[layer.id].noMoreUpdatePossible();
+            // return;
         }
         extentsSource.push(extentSource);
     }

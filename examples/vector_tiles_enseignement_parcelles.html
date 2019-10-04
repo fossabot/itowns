@@ -7,15 +7,16 @@
         <link rel="stylesheet" type="text/css" href="css/loading_screen.css">
 
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="js/GUI/dat.gui/dat.gui.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
     </head>
     <body>
         <div id="viewerDiv"></div>
         <div id="debug" width="400" height="300"></div>
         <script src="js/GUI/GuiTools.js"></script>
         <script src="../dist/itowns.js"></script>
-        <script src="js/loading_screen.js"></script>
+        <script src="js/GUI/LoadingScreen.js"></script>
         <script src="../dist/debug.js"></script>
+        <script src="js/plugins/FeatureToolTip.js"></script>
         <script>
             // # Simple Globe viewer + a vector tile layer
 
@@ -33,9 +34,9 @@
             view.tileLayer.noTextureColor = new itowns.THREE.Color(0x95c1e1);
             var menuGlobe = new GuiTools('menuDiv', view, 300);
 
-            promises.push(itowns.Fetcher.json('./layers/JSONLayers/OPENSM.json').then(function _(config) {
-                config.source = new itowns.TMSSource(config.source);
-                var layer = new itowns.ColorLayer('opensm', config);
+            promises.push(itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+                config.source = new itowns.WMTSSource(config.source);
+                var layer = new itowns.ColorLayer('Ortho', config);
                 return view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
             }));
 
@@ -81,7 +82,7 @@
                         const isValid = inter(extentDestination.zoom) == inter(data.extent.zoom);
                         return false;
                     }
-                
+
                     var mvtLayer;
                     if (source == 'BATI_D94') {
                         var mvtSource = new itowns.TMSSource({
@@ -106,7 +107,7 @@
                         function altitudeBuildings(properties) {
                             return 0;
                         }
-                        
+
                         function extrudeBuildings(properties) {
                             return (properties.altitude_minimale_toit - properties.altitude_minimale_sol);
                         }
@@ -127,7 +128,7 @@
                             backgroundLayer,
                         });
                         view.addLayer(buildingLayer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
-                        
+
                     } else {
                         var mvtSource = new itowns.TMSSource({
                             url: urlTiles,
@@ -155,8 +156,25 @@
                             backgroundLayer,
                             noTextureParentOutsideLimit: true,
                         });
-        
-                        return view.addLayer(mvtLayer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+
+                        return view.addLayer(mvtLayer).then(layer => {
+                            FeatureToolTip.addLayer(layer, {
+                                filterGeometries: function _(geometries) {
+                                    var uniqueClasses = [];
+                                    return geometries.filter(function _(g) {
+                                        if (g.geometry.properties.class && !uniqueClasses.includes(g.geometry.properties.class)) {
+                                            uniqueClasses.push(g.geometry.properties.class);
+                                            return true;
+                                        }
+                                    });
+                                },
+                                filterAllProperties: false,
+                                format: function _(n, p) {
+                                    if (p !== undefined && n == 'class') return p;
+                                }
+                            });
+                            menuGlobe.addLayerGUI.bind(menuGlobe)(layer);
+                        });
                     }
                 }));
             }
@@ -164,7 +182,7 @@
             // Listen for globe full initialisation event
             view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
                 Promise.all(promises).then(function () {
-                    itowns.ColorLayersOrdering.moveLayerToIndex(view, 'opensm', 0);
+                    itowns.ColorLayersOrdering.moveLayerToIndex(view, 'Ortho', 0);
                 }).catch(console.error);
             });
 
