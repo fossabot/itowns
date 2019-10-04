@@ -40,6 +40,9 @@
                 return view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
             }));
 
+            FeatureToolTip.init(viewerDiv, view);
+
+
             // // Add two elevation layers.
             // // These will deform iTowns globe geometry to represent terrain elevation.
             // function addElevationLayerFromConfig(config) {
@@ -159,19 +162,20 @@
 
                         return view.addLayer(mvtLayer).then(layer => {
                             FeatureToolTip.addLayer(layer, {
-                                filterGeometries: function _(geometries) {
-                                    var uniqueClasses = [];
-                                    return geometries.filter(function _(g) {
-                                        if (g.geometry.properties.class && !uniqueClasses.includes(g.geometry.properties.class)) {
-                                            uniqueClasses.push(g.geometry.properties.class);
-                                            return true;
-                                        }
-                                    });
-                                },
+                                // filterGeometries: function _(geometries) {
+                                //     console.log('geometries', geometries);
+                                //     var uniqueClasses = [];
+                                //     return geometries.filter(function _(g) {
+                                //         if (g.geometry.properties.class && !uniqueClasses.includes(g.geometry.properties.class)) {
+                                //             uniqueClasses.push(g.geometry.properties.class);
+                                //             return true;
+                                //         }
+                                //     });
+                                // },
                                 filterAllProperties: false,
-                                format: function _(n, p) {
-                                    if (p !== undefined && n == 'class') return p;
-                                }
+                                // format: function _(n, p) {
+                                //     if (p !== undefined && n == 'class') return p;
+                                // }
                             });
                             menuGlobe.addLayerGUI.bind(menuGlobe)(layer);
                         });
