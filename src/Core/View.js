@@ -746,6 +746,7 @@ class View extends THREE.EventDispatcher {
 
         this.getPickingPositionFromDepth(mouse, positionVector);
         const distance = this.camera.camera3D.position.distanceTo(positionVector);
+        coordinates.crs = this.referenceCrs;
         coordinates.setFromVector3(positionVector);
 
         // Get the correct precision; the position variable will be set in this
