@@ -147,11 +147,14 @@ export default {
      */
     filterFeaturesUnderCoordinate(coordinate, features, epsilon = 0.1) {
         const result = [];
+        // console.log(coordinate, features.extent, epsilon);
+        coord.crs = coordinate.crs;
+        coord.copy(coordinate);
 
         // We can take this shortcut because either Feature and
         // FeatureCollection have an extent property
         if (features.extent) {
-            coordinate.as(Crs.formatToEPSG(features.extent.crs), coord);
+            coord.as(Crs.formatToEPSG(features.extent.crs), coord);
             // Special case, because of the way tiles in VectorTileParser are
             // handled (see Feature2Texture for a similar solution)
             if ((features.scale.x != 1 && features.scale.y != 1)
@@ -173,14 +176,14 @@ export default {
         }
         if (Array.isArray(features.features)) {
             for (const feature of features.features) {
-                if (feature.extent && !feature.extent.isPointInside(coordinate, epsilon)) {
+                if (feature.extent && !feature.extent.isPointInside(coord, epsilon)) {
                     continue;
                 }
 
-                isFeatureUnderCoordinate(coordinate, feature, epsilon, result);
+                isFeatureUnderCoordinate(coord, feature, epsilon, result);
             }
         } else if (features.geometry) {
-            isFeatureUnderCoordinate(coordinate, features, epsilon, result);
+            isFeatureUnderCoordinate(coord, features, epsilon, result);
         }
 
         return result;
