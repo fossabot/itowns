@@ -21,6 +21,7 @@ class OBB extends THREE.Object3D {
      */
     constructor(min = new THREE.Vector3(+Infinity, +Infinity, +Infinity), max = new THREE.Vector3(-Infinity, -Infinity, -Infinity)) {
         super();
+        this.isOBB = true;
         this.box3D = new THREE.Box3(min.clone(), max.clone());
         this.natBox = this.box3D.clone();
         this.z = { min: 0, max: 0, scale: 1.0 };

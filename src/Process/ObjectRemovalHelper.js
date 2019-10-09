@@ -1,3 +1,11 @@
+function filterToRemove(c) {
+    if (c.layer) {
+        return c.layer.id === this.id;
+    } else {
+        return !c.isOBB;
+    }
+}
+
 export default {
     /**
      * Cleanup obj to release three.js allocated resources
@@ -38,7 +46,7 @@ export default {
      * @return {Array} an array of removed Object3D from obj (not including the recursive removals)
      */
     removeChildren(layer, obj) {
-        const toRemove = obj.children.filter(c => c.layer === layer);
+        const toRemove = obj.children.filter(filterToRemove, layer);
         obj.remove(...toRemove);
         return toRemove;
     },
@@ -51,8 +59,7 @@ export default {
      * @return {Array} an array of removed Object3D from obj (not including the recursive removals)
      */
     removeChildrenAndCleanup(layer, obj) {
-        const toRemove = obj.children.filter(c => c.layer === layer);
-
+        const toRemove = obj.children.filter(filterToRemove, layer);
         obj.remove(...toRemove);
         if (obj.layer === layer) {
             this.cleanup(obj);
@@ -68,7 +75,7 @@ export default {
      * @return {Array} an array of removed Object3D from obj (not including the recursive removals)
      */
     removeChildrenAndCleanupRecursively(layer, obj) {
-        const toRemove = obj.children.filter(c => c.layer === layer);
+        const toRemove = obj.children.filter(filterToRemove, layer);
         for (const c of toRemove) {
             this.removeChildrenAndCleanupRecursively(layer, c);
         }
